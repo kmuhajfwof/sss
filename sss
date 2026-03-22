@@ -2,40 +2,30 @@
 set -e
 source /venv/main/bin/activate
 
-WORKSPACE=${WORKSPACE:-/workspace}
-COMFYUI_DIR="${WORKSPACE}/ComfyUI"
+COMFYUI_DIR=/workspace/ComfyUI
 
-APT_PACKAGES=(
-    "git-lfs"
-)
-PIP_PACKAGES=()
+# ── Модели (скачиваются с Hugging Face при старте) ────────────────
 
-NODES=(
-    "https://github.com/Fannovel16/comfyui_controlnet_aux"
-    "https://github.com/ltdrdata/ComfyUI-Impact-Pack"
-    "https://github.com/yolain/ComfyUI-Easy-Use"
-    "https://github.com/kijai/ComfyUI-KJNodes"
-    "https://github.com/pythongosssss/ComfyUI-Custom-Scripts"
-    "https://github.com/ClownsharkBatwing/RES4LYF"
-    "https://github.com/CY-CHENYUE/ComfyUI-Janus-Pro"
-    "https://github.com/cubiq/ComfyUI_essentials"
-    "https://github.com/nkchocoai/ComfyUI-PromptUtilities"
-    "https://github.com/evanspearman/ComfyMath"
-    "https://github.com/WASasquatch/was-node-suite-comfyui"
-    "https://github.com/rgthree/rgthree-comfy"
+# --- Qwen-Image-Edit ---
+DIFFUSION_MODELS=(
+    "https://huggingface.co/aidiffuser/Qwen-Image-Edit-2509/resolve/main/Qwen-Image-Edit-2509_bf16.safetensors"
+    "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors"
+    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
 )
 
 TEXT_ENCODERS=(
+    "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b.safetensors"
     "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"
 )
 
 VAE_MODELS=(
+    "https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/resolve/5cf642dd2b94af2a558ec06a9dde255c673e1fdf/VAE/Qwen_Image-VAE.safetensors"
     "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/vae/ae.safetensors"
 )
 
-DIFFUSION_MODELS=(
-    "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors"
-    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
+LORAS=(
+    "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V2.0.safetensors"
+    "https://huggingface.co/alibaba-pai/Z-Image-Fun-Lora-Distill/resolve/main/Z-Image-Fun-Lora-Distill-8-Steps-2603-ComfyUI.safetensors"
 )
 
 MODEL_PATCHES=(
@@ -43,110 +33,44 @@ MODEL_PATCHES=(
     "https://huggingface.co/alibaba-pai/Z-Image-Fun-Controlnet-Union-2.1/resolve/main/Z-Image-Fun-Controlnet-Union-2.1.safetensors"
 )
 
-LORA_MODELS=(
-    "https://huggingface.co/alibaba-pai/Z-Image-Fun-Lora-Distill/resolve/main/Z-Image-Fun-Lora-Distill-8-Steps-2603-ComfyUI.safetensors"
-)
-
+# --- Janus-Pro (git-lfs repo) ---
 JANUS_REPO="https://huggingface.co/deepseek-ai/Janus-Pro-1B"
 JANUS_DIR="${COMFYUI_DIR}/models/Janus-Pro/Janus-Pro-1B"
 
-function provisioning_start() {
-    provisioning_get_apt_packages
-    provisioning_clone_comfyui
-    provisioning_install_base_reqs
-    provisioning_get_nodes
-    provisioning_get_pip_packages
+# ── Функция скачивания ──
 
-    provisioning_get_files "${COMFYUI_DIR}/models/text_encoders"      "${TEXT_ENCODERS[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/vae"                "${VAE_MODELS[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/diffusion_models"   "${DIFFUSION_MODELS[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/model_patches"      "${MODEL_PATCHES[@]}"
-    provisioning_get_files "${COMFYUI_DIR}/models/loras"              "${LORA_MODELS[@]}"
-
-    provisioning_clone_janus
-}
-
-function provisioning_clone_comfyui() {
-    if [[ ! -d "${COMFYUI_DIR}" ]]; then
-        git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"
-    fi
-    cd "${COMFYUI_DIR}"
-}
-
-function provisioning_install_base_reqs() {
-    if [[ -f requirements.txt ]]; then
-        pip install --no-cache-dir -r requirements.txt
-    fi
-}
-
-function provisioning_get_apt_packages() {
-    if [[ ${#APT_PACKAGES[@]} -gt 0 ]]; then
-        sudo apt update && sudo apt install -y "${APT_PACKAGES[@]}"
-    fi
-}
-
-function provisioning_get_pip_packages() {
-    if [[ ${#PIP_PACKAGES[@]} -gt 0 ]]; then
-        pip install --no-cache-dir "${PIP_PACKAGES[@]}"
-    fi
-}
-
-function provisioning_get_nodes() {
-    mkdir -p "${COMFYUI_DIR}/custom_nodes"
-    cd "${COMFYUI_DIR}/custom_nodes"
-
-    for repo in "${NODES[@]}"; do
-        dir="${repo##*/}"
-        path="./${dir}"
-
-        if [[ -d "$path" ]]; then
-            (cd "$path" && git pull --ff-only 2>/dev/null || { git fetch && git reset --hard origin/main; })
-        else
-            git clone "$repo" "$path" --recursive || true
-        fi
-
-        requirements="${path}/requirements.txt"
-        if [[ -f "$requirements" ]]; then
-            pip install --no-cache-dir -r "$requirements" || true
-        fi
-    done
-}
-
-function provisioning_clone_janus() {
-    git lfs install
-    if [[ ! -d "${JANUS_DIR}" ]]; then
-        mkdir -p "$(dirname "${JANUS_DIR}")"
-        git clone "${JANUS_REPO}" "${JANUS_DIR}"
-    else
-        (cd "${JANUS_DIR}" && git pull --ff-only 2>/dev/null || true)
-    fi
-}
-
-function provisioning_get_files() {
-    if [[ $# -lt 2 ]]; then return; fi
-    local dir="$1"
-    shift
+function download_files() {
+    local dir="$1"; shift
     local files=("$@")
-
+    [[ $# -eq 0 ]] && return
     mkdir -p "$dir"
-
     for url in "${files[@]}"; do
         local auth_header=""
         if [[ -n "$HF_TOKEN" && "$url" =~ huggingface\.co ]]; then
             auth_header="--header=Authorization: Bearer $HF_TOKEN"
-        elif [[ -n "$CIVITAI_TOKEN" && "$url" =~ civitai\.com ]]; then
-            auth_header="--header=Authorization: Bearer $CIVITAI_TOKEN"
         fi
-
-        wget $auth_header -nc --content-disposition --show-progress -e dotbytes=4M -P "$dir" "$url" || true
+        wget $auth_header -nc --content-disposition --show-progress \
+             -e dotbytes=4M -P "$dir" "$url" || true
     done
 }
 
-if [[ ! -f /.noprovisioning ]]; then
-    provisioning_start
+# ── Скачиваем модели ──
+
+download_files "${COMFYUI_DIR}/models/diffusion_models"  "${DIFFUSION_MODELS[@]}"
+download_files "${COMFYUI_DIR}/models/text_encoders"     "${TEXT_ENCODERS[@]}"
+download_files "${COMFYUI_DIR}/models/vae"               "${VAE_MODELS[@]}"
+download_files "${COMFYUI_DIR}/models/loras"             "${LORAS[@]}"
+download_files "${COMFYUI_DIR}/models/model_patches"     "${MODEL_PATCHES[@]}"
+
+# ── Клонируем Janus-Pro (нужен git-lfs) ──
+
+if [[ ! -d "${JANUS_DIR}" ]]; then
+    echo "📦 Cloning Janus-Pro-1B..."
+    mkdir -p "$(dirname "${JANUS_DIR}")"
+    git lfs install
+    git clone "${JANUS_REPO}" "${JANUS_DIR}"
+else
+    echo "✅ Janus-Pro-1B already exists, skipping"
 fi
 
-echo "setup completed"
-
-cd "${COMFYUI_DIR}"
-python main.py --listen 0.0.0.0 --port 8188
+echo "✅ All models downloaded"
