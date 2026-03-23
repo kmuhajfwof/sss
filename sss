@@ -1,64 +1,75 @@
-FROM vastai/comfy:v0.10.0-cuda-12.9-py312
+#!/bin/bash
+set -e
+source /venv/main/bin/activate
 
-# Activate venv
-ENV VIRTUAL_ENV=/venv/main
-ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+COMFYUI_DIR=/workspace/ComfyUI
 
-ENV COMFYUI_DIR=/workspace/ComfyUI
+# ── Модели (скачиваются с Hugging Face при старте) ────────────────
 
-# ── 1. System packages ──
-RUN apt-get update && apt-get install -y --no-install-recommends git-lfs && \
-    git lfs install && \
-    rm -rf /var/lib/apt/lists/*
+# --- Qwen-Image-Edit ---
+DIFFUSION_MODELS=(
+    "https://huggingface.co/aidiffuser/Qwen-Image-Edit-2509/resolve/main/Qwen-Image-Edit-2509_bf16.safetensors"
+    "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors"
+    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
+)
 
-# ── 2. Clone ComfyUI into /workspace ──
-RUN mkdir -p /workspace && \
-    git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}" && \
-    cd "${COMFYUI_DIR}" && \
-    pip install --no-cache-dir -r requirements.txt
+TEXT_ENCODERS=(
+    "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b.safetensors"
+    "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"
+)
 
-# ── 3. Clone custom nodes (split to handle large repos) ──
-RUN cd "${COMFYUI_DIR}/custom_nodes" && \
-    git clone --recursive https://github.com/rgthree/rgthree-comfy && \
-    git clone --recursive https://github.com/kijai/ComfyUI-KJNodes && \
-    git clone --recursive https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes && \
-    git clone --recursive https://github.com/ltdrdata/ComfyUI-Impact-Pack && \
-    git clone --recursive https://github.com/Fannovel16/comfyui_controlnet_aux && \
-    git clone --recursive https://github.com/pythongosssss/ComfyUI-Custom-Scripts && \
-    git clone --recursive https://github.com/yolain/ComfyUI-Easy-Use && \
-    git clone --recursive https://github.com/CY-CHENYUE/ComfyUI-Janus-Pro && \
-    git clone --recursive https://github.com/WASasquatch/was-node-suite-comfyui && \
-    git clone --recursive https://github.com/nkchocoai/ComfyUI-PromptUtilities && \
-    git clone --recursive https://github.com/ltdrdata/ComfyUI-Inspire-Pack && \
-    git clone --recursive https://github.com/crystian/ComfyUI-Crystools && \
-    git clone --recursive https://github.com/cubiq/ComfyUI_essentials && \
-    git clone --recursive https://github.com/evanspearman/ComfyMath && \
-    git clone --recursive https://github.com/kmuhajfwof/tsutils2 && \
-    git clone --recursive https://github.com/Comfy-Org/ComfyUI-Manager
+VAE_MODELS=(
+    "https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/resolve/5cf642dd2b94af2a558ec06a9dde255c673e1fdf/VAE/Qwen_Image-VAE.safetensors"
+    "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/vae/ae.safetensors"
+)
 
-# RES4LYF is large — clone separately with increased git buffer
-RUN cd "${COMFYUI_DIR}/custom_nodes" && \
-    git config --global http.postBuffer 524288000 && \
-    git clone --recursive https://github.com/ClownsharkBatwing/RES4LYF
+LORAS=(
+    "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V2.0.safetensors"
+    "https://huggingface.co/alibaba-pai/Z-Image-Fun-Lora-Distill/resolve/main/Z-Image-Fun-Lora-Distill-8-Steps-2603-ComfyUI.safetensors"
+)
 
-# ── 4. Install pip requirements for every custom node ──
-RUN cd "${COMFYUI_DIR}/custom_nodes" && \
-    for dir in */; do \
-        if [ -f "${dir}requirements.txt" ]; then \
-            echo "Installing requirements for ${dir}..." && \
-            pip install --no-cache-dir -r "${dir}requirements.txt" || true; \
-        fi; \
+MODEL_PATCHES=(
+    "https://huggingface.co/alibaba-pai/Z-Image-Fun-Controlnet-Union-2.1/resolve/main/Z-Image-Fun-Controlnet-Union-2.1.safetensors"
+)
+
+# --- Janus-Pro (git-lfs repo) ---
+JANUS_REPO="https://huggingface.co/deepseek-ai/Janus-Pro-1B"
+JANUS_DIR="${COMFYUI_DIR}/models/Janus-Pro/Janus-Pro-1B"
+
+# ── Функция скачивания ──
+
+function download_files() {
+    local dir="$1"; shift
+    local files=("$@")
+    [[ $# -eq 0 ]] && return
+    mkdir -p "$dir"
+    for url in "${files[@]}"; do
+        local auth_header=""
+        if [[ -n "$HF_TOKEN" && "$url" =~ huggingface\.co ]]; then
+            auth_header="--header=Authorization: Bearer $HF_TOKEN"
+        fi
+        wget $auth_header -nc --content-disposition --show-progress \
+             -e dotbytes=4M -P "$dir" "$url" || true
     done
+}
 
-# ── 5. Pre-create model directories ──
-RUN mkdir -p "${COMFYUI_DIR}/models/clip" \
-             "${COMFYUI_DIR}/models/clip_vision" \
-             "${COMFYUI_DIR}/models/text_encoders" \
-             "${COMFYUI_DIR}/models/vae" \
-             "${COMFYUI_DIR}/models/diffusion_models" \
-             "${COMFYUI_DIR}/models/controlnet" \
-             "${COMFYUI_DIR}/models/detection" \
-             "${COMFYUI_DIR}/models/loras" \
-             "${COMFYUI_DIR}/models/model_patches" \
-             "${COMFYUI_DIR}/models/upscale_models" \
-             "${COMFYUI_DIR}/models/Janus-Pro"
+# ── Скачиваем модели ──
+
+download_files "${COMFYUI_DIR}/models/diffusion_models"  "${DIFFUSION_MODELS[@]}"
+download_files "${COMFYUI_DIR}/models/text_encoders"     "${TEXT_ENCODERS[@]}"
+download_files "${COMFYUI_DIR}/models/vae"               "${VAE_MODELS[@]}"
+download_files "${COMFYUI_DIR}/models/loras"             "${LORAS[@]}"
+download_files "${COMFYUI_DIR}/models/model_patches"     "${MODEL_PATCHES[@]}"
+
+# ── Клонируем Janus-Pro (нужен git-lfs) ──
+
+if [[ ! -d "${JANUS_DIR}" ]]; then
+    echo "📦 Cloning Janus-Pro-1B..."
+    mkdir -p "$(dirname "${JANUS_DIR}")"
+    git lfs install
+    git clone "${JANUS_REPO}" "${JANUS_DIR}"
+else
+    echo "✅ Janus-Pro-1B already exists, skipping"
+fi
+
+echo "✅ All models downloaded"
