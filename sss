@@ -6,13 +6,11 @@ COMFYUI_DIR=/workspace/ComfyUI
 
 # ── Модели (скачиваются с Hugging Face при старте) ────────────────
 
-# --- Qwen-Image-Edit / Z-Image + добавлен обычный Qwen-Image ---
+# --- Qwen-Image-Edit ---
 DIFFUSION_MODELS=(
+    "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2511_bf16.safetensors"
     "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors"
     "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
-
-    # из заметки
-    "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors"
 )
 
 TEXT_ENCODERS=(
@@ -26,24 +24,13 @@ VAE_MODELS=(
 )
 
 LORAS=(
-    "https://huggingface.co/arhiteector/loras/resolve/main/experiment1/Z-Image-Banana%20V1%20-%20ZIB%2BZIT.safetensors"
+    "https://huggingface.co/alibaba-pai/Z-Image-Fun-Lora-Distill/resolve/main/Z-Image-Fun-Lora-Distill-8-Steps-2603-ComfyUI.safetensors"
     "https://huggingface.co/arhiteector/loras/resolve/main/billy/billy_base11_000000800.safetensors"
-
-    # из заметки
-    "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors"
 )
 
 MODEL_PATCHES=(
     "https://huggingface.co/alibaba-pai/Z-Image-Fun-Controlnet-Union-2.1/resolve/main/Z-Image-Fun-Controlnet-Union-2.1.safetensors"
-
-    # из заметки: Qwen-Image-DiffSynth-ControlNets
-    "https://huggingface.co/Comfy-Org/Qwen-Image-DiffSynth-ControlNets/resolve/main/split_files/model_patches/qwen_image_canny_diffsynth_controlnet.safetensors"
-    "https://huggingface.co/Comfy-Org/Qwen-Image-DiffSynth-ControlNets/resolve/main/split_files/model_patches/qwen_image_depth_diffsynth_controlnet.safetensors"
 )
-
-# --- Florence PromptGen v2.0 (из заметки) ---
-FLORENCE_REPO="https://huggingface.co/MiaoshouAI/Florence-2-large-PromptGen-v2.0"
-FLORENCE_DIR="${COMFYUI_DIR}/models/Florence2/Florence-2-large-PromptGen-v2.0"
 
 # --- Janus-Pro (git-lfs repo) ---
 JANUS_REPO="https://huggingface.co/deepseek-ai/Janus-Pro-1B"
@@ -51,21 +38,17 @@ JANUS_DIR="${COMFYUI_DIR}/models/Janus-Pro/Janus-Pro-1B"
 
 # ── Функция скачивания ──
 
-download_files() {
+function download_files() {
     local dir="$1"; shift
     local files=("$@")
-    [[ ${#files[@]} -eq 0 ]] && return
-
+    [[ $# -eq 0 ]] && return
     mkdir -p "$dir"
-
     for url in "${files[@]}"; do
-        local auth_header=()
+        local auth_header=""
         if [[ -n "$HF_TOKEN" && "$url" =~ huggingface\.co ]]; then
-            auth_header=(--header="Authorization: Bearer $HF_TOKEN")
+            auth_header="--header=Authorization: Bearer $HF_TOKEN"
         fi
-
-        echo "📥 Downloading: $url"
-        wget "${auth_header[@]}" -nc --content-disposition --show-progress \
+        wget $auth_header -nc --content-disposition --show-progress \
              -e dotbytes=4M -P "$dir" "$url" || true
     done
 }
@@ -78,24 +61,13 @@ download_files "${COMFYUI_DIR}/models/vae"               "${VAE_MODELS[@]}"
 download_files "${COMFYUI_DIR}/models/loras"             "${LORAS[@]}"
 download_files "${COMFYUI_DIR}/models/model_patches"     "${MODEL_PATCHES[@]}"
 
-# ── Клонируем Florence PromptGen ──
-
-if [[ ! -d "${FLORENCE_DIR}" ]]; then
-    echo "📦 Cloning Florence-2-large-PromptGen-v2.0..."
-    mkdir -p "$(dirname "${FLORENCE_DIR}")"
-    git lfs install || true
-    git clone "${FLORENCE_REPO}" "${FLORENCE_DIR}" || true
-else
-    echo "✅ Florence PromptGen already exists, skipping"
-fi
-
 # ── Клонируем Janus-Pro (нужен git-lfs) ──
 
 if [[ ! -d "${JANUS_DIR}" ]]; then
     echo "📦 Cloning Janus-Pro-1B..."
     mkdir -p "$(dirname "${JANUS_DIR}")"
-    git lfs install || true
-    git clone "${JANUS_REPO}" "${JANUS_DIR}" || true
+    git lfs install
+    git clone "${JANUS_REPO}" "${JANUS_DIR}"
 else
     echo "✅ Janus-Pro-1B already exists, skipping"
 fi
