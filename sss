@@ -39,6 +39,21 @@ LORAS=(
 MODEL_PATCHES=(
 )
 
+# --- SAM ---
+SAM_MODELS=(
+    "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
+)
+
+# --- Ultralytics bbox models ---
+ULTRALYTICS_BBOX_MODELS=(
+    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Eyeful_v2-Paired.pt"
+    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Face.pt"
+    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Nipples.pt"
+    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Pussy.pt"
+    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/penis.pt"
+    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/vagina-v3.2.pt"
+)
+
 # --- Janus-Pro (git-lfs repo) ---
 JANUS_REPO="https://huggingface.co/deepseek-ai/Janus-Pro-1B"
 JANUS_DIR="${COMFYUI_DIR}/models/Janus-Pro/Janus-Pro-1B"
@@ -62,11 +77,13 @@ function download_files() {
 
 # ── Скачиваем модели ──
 
-download_files "${COMFYUI_DIR}/models/diffusion_models"  "${DIFFUSION_MODELS[@]}"
-download_files "${COMFYUI_DIR}/models/text_encoders"     "${TEXT_ENCODERS[@]}"
-download_files "${COMFYUI_DIR}/models/vae"               "${VAE_MODELS[@]}"
-download_files "${COMFYUI_DIR}/models/loras"             "${LORAS[@]}"
-download_files "${COMFYUI_DIR}/models/model_patches"     "${MODEL_PATCHES[@]}"
+download_files "${COMFYUI_DIR}/models/diffusion_models"     "${DIFFUSION_MODELS[@]}"
+download_files "${COMFYUI_DIR}/models/text_encoders"        "${TEXT_ENCODERS[@]}"
+download_files "${COMFYUI_DIR}/models/vae"                  "${VAE_MODELS[@]}"
+download_files "${COMFYUI_DIR}/models/loras"                "${LORAS[@]}"
+download_files "${COMFYUI_DIR}/models/model_patches"        "${MODEL_PATCHES[@]}"
+download_files "${COMFYUI_DIR}/models/sams"                 "${SAM_MODELS[@]}"
+download_files "${COMFYUI_DIR}/models/ultralytics/bbox"     "${ULTRALYTICS_BBOX_MODELS[@]}"
 
 # ── Клонируем Janus-Pro (нужен git-lfs) ──
 
