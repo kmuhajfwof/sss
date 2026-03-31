@@ -49,10 +49,6 @@ ULTRALYTICS_BBOX_MODELS=(
     "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/penis.pt"
 )
 
-# --- Janus-Pro (git-lfs repo) ---
-JANUS_REPO="https://huggingface.co/deepseek-ai/Janus-Pro-1B"
-JANUS_DIR="${COMFYUI_DIR}/models/Janus-Pro/Janus-Pro-1B"
-
 # ── Функция скачивания ──
 
 function download_files() {
@@ -70,6 +66,11 @@ function download_files() {
     done
 }
 
+# ── Создаём папку SEEDVR2 (как было с Janus) ──
+
+SEEDVR2_DIR="${COMFYUI_DIR}/models/SEEDVR2"
+mkdir -p "${SEEDVR2_DIR}"
+
 # ── Скачиваем модели ──
 
 download_files "${COMFYUI_DIR}/models/diffusion_models"     "${DIFFUSION_MODELS[@]}"
@@ -79,16 +80,5 @@ download_files "${COMFYUI_DIR}/models/loras"                "${LORAS[@]}"
 download_files "${COMFYUI_DIR}/models/model_patches"        "${MODEL_PATCHES[@]}"
 download_files "${COMFYUI_DIR}/models/sams"                 "${SAM_MODELS[@]}"
 download_files "${COMFYUI_DIR}/models/ultralytics/bbox"     "${ULTRALYTICS_BBOX_MODELS[@]}"
-
-# ── Клонируем Janus-Pro (нужен git-lfs) ──
-
-if [[ ! -d "${JANUS_DIR}" ]]; then
-    echo "📦 Cloning Janus-Pro-1B..."
-    mkdir -p "$(dirname "${JANUS_DIR}")"
-    git lfs install
-    git clone "${JANUS_REPO}" "${JANUS_DIR}"
-else
-    echo "✅ Janus-Pro-1B already exists, skipping"
-fi
 
 echo "✅ All models downloaded"
