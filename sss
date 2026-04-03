@@ -8,13 +8,13 @@ COMFYUI_DIR=/workspace/ComfyUI
 
 # --- Qwen-Image-Edit ---
 DIFFUSION_MODELS=(
-    "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors"
+    #"https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors"
     # "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2511_bf16.safetensors"
     "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
 )
 
 TEXT_ENCODERS=(
-    "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+    #"https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
     "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"
 )
 
@@ -28,25 +28,25 @@ LORAS=(
     #"https://huggingface.co/arhiteector/zimageqwen/resolve/main/qwen-image_nsfw_adv_v1.0.safetensors"
     #"https://huggingface.co/prithivMLmods/Qwen-Image-Edit-2511-Unblur-Upscale/resolve/main/Qwen-Image-Edit-Unblur-Upscale_20.safetensors"
     #"https://huggingface.co/arhiteector/loras/resolve/main/billy/billy_base11_000000800.safetensors"
-    "https://huggingface.co/arhiteector/loras/resolve/main/milf/milf_000000800.safetensors"
+    #"https://huggingface.co/arhiteector/loras/resolve/main/milf/milf_000000800.safetensors"
 )
 
 MODEL_PATCHES=(
-    "https://huggingface.co/alibaba-pai/Z-Image-Fun-Controlnet-Union-2.1/resolve/main/Z-Image-Fun-Controlnet-Union-2.1.safetensors"
+    #"https://huggingface.co/alibaba-pai/Z-Image-Fun-Controlnet-Union-2.1/resolve/main/Z-Image-Fun-Controlnet-Union-2.1.safetensors"
 )
 
 # --- SAM ---
 SAM_MODELS=(
-    "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
+    #"https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
 )
 
 # --- Ultralytics bbox models ---
 ULTRALYTICS_BBOX_MODELS=(
-    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Eyeful_v2-Paired.pt"
-    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Face.pt"
-    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Nipples.pt"
-    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Pussy.pt"
-    "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/penis.pt"
+    #"https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Eyeful_v2-Paired.pt"
+    #"https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Face.pt"
+   # "https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Nipples.pt"
+    #"https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/Pussy.pt"
+    #"https://huggingface.co/arhiteector/zimageqwen/resolve/main/detectionmodels/penis.pt"
 )
 
 # ── Функция скачивания ──
@@ -68,8 +68,8 @@ function download_files() {
 
 # ── Создаём папку SEEDVR2 (как было с Janus) ──
 
-SEEDVR2_DIR="${COMFYUI_DIR}/models/SEEDVR2"
-mkdir -p "${SEEDVR2_DIR}"
+#SEEDVR2_DIR="${COMFYUI_DIR}/models/SEEDVR2"
+#mkdir -p "${SEEDVR2_DIR}"
 
 # ── Скачиваем модели ──
 
